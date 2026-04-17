@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "env": {
+    "NEXT_PUBLIC_STELLAR_NETWORK": "testnet",
+    "NEXT_PUBLIC_HORIZON_URL": "https://horizon-testnet.stellar.org"
+  }
+}
