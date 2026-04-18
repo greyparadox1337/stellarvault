@@ -50,6 +50,11 @@ export function useFreighter() {
       const addrResult = await getAddress();
       console.log("Wishpool Handshake result:", addrResult);
 
+      // Final Debug Alert for production linking
+      if (!addrResult || (typeof addrResult === 'object' && !addrResult.address)) {
+        window.alert("Freighter Handshake Debug: Detected wallet but no address was returned. Raw result: " + JSON.stringify(addrResult));
+      }
+
       let finalAddress = "";
       if (typeof addrResult === 'string') {
         finalAddress = addrResult;
