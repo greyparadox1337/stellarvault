@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { isConnected, getAddress } from "@stellar/freighter-api";
+import { useFreighter } from "@/hooks/useFreighter";
 import { Wallet, Loader2, RefreshCw } from "lucide-react";
 import { fetchBalance } from "@/lib/stellar";
 import { useToast } from "@/context/ToastContext";
@@ -14,9 +14,9 @@ interface WalletButtonProps {
 const CACHE_TTL = 30000; // 30 seconds
 
 export default function WalletButton({ onConnect, address }: WalletButtonProps) {
-  const [isConnecting, setIsConnecting] = useState(false);
   const [balance, setBalance] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { isConnecting, error, connect } = useFreighter();
   const { showToast } = useToast();
 
   const getCachedBalance = (addr: string) => {
@@ -32,13 +32,18 @@ export default function WalletButton({ onConnect, address }: WalletButtonProps) 
 
   const updateBalance = useCallback(async (addr: string) => {
     setIsRefreshing(true);
-    const freshBalance = await fetchBalance(addr);
-    setBalance(freshBalance);
-    localStorage.setItem(
-      `stellar_balance_${addr}`,
-      JSON.stringify({ value: freshBalance, timestamp: Date.now() })
-    );
-    setIsRefreshing(false);
+    try {
+      const freshBalance = await fetchBalance(addr);
+      setBalance(freshBalance);
+      localStorage.setItem(
+        `stellar_balance_${addr}`,
+        JSON.stringify({ value: freshBalance, timestamp: Date.now() })
+      );
+    } catch (e) {
+      console.error("Failed to update balance:", e);
+    } finally {
+      setIsRefreshing(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -53,30 +58,10 @@ export default function WalletButton({ onConnect, address }: WalletButtonProps) 
   }, [address, updateBalance]);
 
   const handleConnect = async () => {
-    setIsConnecting(true);
-    try {
-      const result = await isConnected();
-      if (result && result.isConnected) {
-        const addrResult = await getAddress();
-        if (addrResult && typeof addrResult === 'object' && 'address' in addrResult) {
-          if (addrResult.address) {
-            onConnect(addrResult.address);
-            showToast("Wallet connected successfully", "success");
-          } else if (addrResult.error) {
-            showToast(`Connection failed: ${addrResult.error}`, "error");
-          }
-        } else if (typeof addrResult === 'string') {
-          onConnect(addrResult);
-          showToast("Wallet connected successfully", "success");
-        }
-      } else {
-        showToast("Freighter wallet not detected or locked. Please ensure it's installed and unlocked.", "error");
-      }
-    } catch (err: any) {
-      console.error("Wallet connection error:", err);
-      showToast(err.message || "Failed to connect wallet", "error");
-    } finally {
-      setIsConnecting(false);
+    const connectedAddress = await connect();
+    if (connectedAddress) {
+      onConnect(connectedAddress);
+      showToast("Wallet connected successfully", "success");
     }
   };
 
@@ -107,6 +92,17 @@ export default function WalletButton({ onConnect, address }: WalletButtonProps) 
           </div>
         ) : (
           <>
+            {error && (
+            <div className="mt-4">
+              <p className="text-red-400 text-sm font-mono">{error}</p>
+              <button 
+                onClick={handleConnect}
+                className="mt-2 text-[10px] text-accent-cyan underline uppercase tracking-widest hover:text-white transition-colors"
+              >
+                Scan Again
+              </button>
+            </div>
+          )}
             <Wallet className="w-4 h-4 text-accent-cyan" />
             Connect Wallet
           </>

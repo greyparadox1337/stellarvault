@@ -6,22 +6,8 @@ export default function NetworkStatus() {
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const horizonUrl = process.env.NEXT_PUBLIC_HORIZON_URL || "https://horizon-testnet.stellar.org";
-    const ping = async () => {
-      try {
-        const res = await fetch(`${horizonUrl.replace(/\/$/, "")}/ledgers?limit=1`, {
-          method: "GET"
-        });
-        setIsOnline(res.ok);
-      } catch (error) {
-        console.warn("Network ping failed:", error);
-        setIsOnline(false);
-      }
-    };
-
-    ping();
-    const interval = setInterval(ping, 15000);
-    return () => clearInterval(interval);
+    // Temporarily disabled ping to isolate wallet connection issues
+    setIsOnline(true);
   }, []);
 
   return (

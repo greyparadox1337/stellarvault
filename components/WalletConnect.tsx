@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { isConnected, getAddress } from "@stellar/freighter-api";
+import { useFreighter } from "@/hooks/useFreighter";
 import GlassCard from "./GlassCard";
 
 interface WalletConnectProps {
@@ -9,36 +8,12 @@ interface WalletConnectProps {
 }
 
 export default function WalletConnect({ onConnect }: WalletConnectProps) {
-  const [address, setAddress] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { address, isConnecting, error, connect } = useFreighter();
 
   const handleConnect = async () => {
-    setIsConnecting(true);
-    setError(null);
-    try {
-      const result = await isConnected();
-      if (result && result.isConnected) {
-        const addrResult = await getAddress();
-        if (addrResult && typeof addrResult === 'object' && 'address' in addrResult) {
-          if (addrResult.address) {
-            setAddress(addrResult.address);
-            onConnect(addrResult.address);
-          } else if (addrResult.error) {
-            setError(`Connection failed: ${addrResult.error}`);
-          }
-        } else if (typeof addrResult === 'string') {
-          setAddress(addrResult);
-          onConnect(addrResult);
-        }
-      } else {
-        setError("Freighter wallet not detected or locked. Please ensure it's installed and unlocked.");
-      }
-    } catch (err: any) {
-      console.error("Wallet connection error:", err);
-      setError(err.message || "Failed to connect wallet");
-    } finally {
-      setIsConnecting(false);
+    const connectedAddress = await connect();
+    if (connectedAddress) {
+      onConnect(connectedAddress);
     }
   };
 
@@ -64,7 +39,17 @@ export default function WalletConnect({ onConnect }: WalletConnectProps) {
           >
             {isConnecting ? "Connecting..." : "Connect Freighter"}
           </button>
-          {error && <p className="mt-4 text-red-400 text-sm font-mono">{error}</p>}
+          {error && (
+            <div className="mt-4">
+              <p className="text-red-400 text-sm font-mono">{error}</p>
+              <button 
+                onClick={handleConnect}
+                className="mt-2 text-[10px] text-accent-cyan underline uppercase tracking-widest hover:text-white transition-colors"
+              >
+                Scan Again
+              </button>
+            </div>
+          )}
         </div>
       )}
     </GlassCard>

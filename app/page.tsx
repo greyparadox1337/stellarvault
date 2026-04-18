@@ -34,13 +34,23 @@ export default function Home() {
   }, [showToast]);
 
   useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error("Caught global error:", event.error);
+      showToast(`System Error: ${event.message}`, "error");
+    };
+    window.addEventListener("error", handleError);
+    
     if (address) {
       loadBalance(address);
       showToast("Vault initialized successfully", "success");
       const interval = setInterval(() => loadBalance(address), 30000);
-      return () => clearInterval(interval);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener("error", handleError);
+      };
     }
-  }, [address]);
+    return () => window.removeEventListener("error", handleError);
+  }, [address, loadBalance, showToast]);
 
   const handleFund = async () => {
     if (!address) return;

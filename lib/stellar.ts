@@ -19,12 +19,21 @@ const RPC_URL = "https://soroban-testnet.stellar.org";
 const NETWORK_PASSPHRASE = Networks.TESTNET;
 const VAULT_CONTRACT_ID = process.env.NEXT_PUBLIC_VAULT_CONTRACT_ID || "";
 
+let horizonServer: Horizon.Server | null = null;
+let rpcServerInstance: rpc.Server | null = null;
+
 export const getHorizon = () => {
-  return new Horizon.Server(HORIZON_URL);
+  if (!horizonServer) {
+    horizonServer = new Horizon.Server(HORIZON_URL);
+  }
+  return horizonServer;
 };
 
 export const getRpc = () => {
-  return new rpc.Server(RPC_URL);
+  if (!rpcServerInstance) {
+    rpcServerInstance = new rpc.Server(RPC_URL);
+  }
+  return rpcServerInstance;
 };
 
 export const validateAddress = (address: string): boolean => {
@@ -129,7 +138,7 @@ export const fetchLockedBalance = async (userAddress: string): Promise<string> =
         .build()
     );
 
-    if (rpc.Api.isSimulationSuccess(simulation)) {
+    if (rpc.Api.isSimulationSuccess(simulation) && simulation.result) {
       const result = scValToNative(simulation.result.retval);
       return (Number(result) / 10000000).toString(); // Convert from stroops if i128 is stroops
     }
