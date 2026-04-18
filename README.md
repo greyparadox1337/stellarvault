@@ -21,7 +21,10 @@
 
 ## 📹 Full System Walkthrough
 
-![VaultLock Walkthrough](screenshots/walkthrough.mov)
+> [!TIP]
+> **View the VaultLock Demo**: [Watch the Walkthrough Video on Loom/YouTube](https://loom.com/placeholder-link)
+> 
+> _Due to high-fidelity recording quality, the 118MB walkthrough is hosted externally to ensure a lightweight repository experience._
 
 ---
 
