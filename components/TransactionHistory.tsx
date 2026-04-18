@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import GlassCard from "./GlassCard";
 import { fetchHistory } from "@/lib/stellar";
 import { HistorySkeleton } from "./Skeleton";
-import { History, ExternalLink, ArrowDownLeft, ArrowUpRight, UserPlus, Settings } from "lucide-react";
+import { History, ExternalLink, ArrowDownLeft, ArrowUpRight, UserPlus, Shield, Activity, Lock } from "lucide-react";
 
 interface TransactionHistoryProps {
   address: string;
@@ -25,7 +25,7 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
 
   const loadHistory = useCallback(async () => {
     try {
-      const result = await fetchHistory(address, 5);
+      const result = await fetchHistory(address, 8);
       setHistory(result.records as any);
     } catch (err) {
       console.error("Failed to load history:", err);
@@ -43,18 +43,20 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
   const getFriendlyType = (type: string) => {
     switch (type) {
       case "payment":
-        return { label: "Payment", icon: ArrowUpRight, color: "text-accent-cyan" };
+        return { label: "Vault Transfer", icon: ArrowUpRight, color: "text-primary" };
       case "create_account":
-        return { label: "Vault Created", icon: UserPlus, color: "text-accent-violet" };
+        return { label: "Vault Initialized", icon: Shield, color: "text-primary" };
       case "account_merge":
-        return { label: "Vault Merged", icon: UserPlus, color: "text-red-400" };
+        return { label: "Vault Consolidation", icon: UserPlus, color: "text-red-400" };
       case "change_trust":
-        return { label: "Asset Trust", icon: Settings, color: "text-orange-400" };
+        return { label: "Security Trustline", icon: Lock, color: "text-amber-400" };
+      case "invoke_host_function":
+        return { label: "Smart Contract Execution", icon: Activity, color: "text-primary" };
       default:
         return { 
           label: (type || "Unknown").split("_").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" "), 
-          icon: Settings, 
-          color: "text-gray-400" 
+          icon: Shield, 
+          color: "text-slate-400" 
         };
     }
   };
@@ -62,21 +64,21 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
   if (isLoading) return <HistorySkeleton />;
 
   return (
-    <GlassCard className="p-6 h-full flex flex-col">
+    <GlassCard className="p-6 h-full flex flex-col border-primary/10">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded bg-accent-violet/10">
-            <History className="w-4 h-4 text-accent-violet" />
+          <div className="p-2 rounded bg-primary/10">
+            <History className="w-4 h-4 text-primary" />
           </div>
-          <h2 className="text-sm font-bold font-mono text-accent-violet uppercase tracking-widest">
-            Recent Activity
+          <h2 className="text-xs font-bold font-mono text-primary uppercase tracking-widest">
+            Neural Ledger Activity
           </h2>
         </div>
         <button 
           onClick={() => { setIsLoading(true); loadHistory(); }}
-          className="text-[10px] font-mono text-white/20 hover:text-white transition-colors uppercase tracking-tighter"
+          className="text-[10px] font-mono text-slate-500 hover:text-primary transition-colors uppercase tracking-widest font-bold"
         >
-          Refresh Ledger
+          Rescan
         </button>
       </div>
 
@@ -88,29 +90,32 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
             return (
               <div
                 key={tx.id}
-                className="flex items-center justify-between p-4 rounded bg-black/30 border border-white/5 hover:border-white/10 transition-colors group"
+                className="flex items-center justify-between p-4 rounded bg-slate-900/40 border border-white/5 hover:border-primary/20 transition-all group relative overflow-hidden"
               >
-                <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-full bg-white/5 ${typeInfo.color}`}>
+                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors" />
+                <div className="flex items-center gap-4 z-10">
+                  <div className={`p-2 rounded-lg bg-white/5 ${typeInfo.color} group-hover:bg-primary/10 transition-colors`}>
                     <Icon className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white font-sans">{typeInfo.label}</p>
-                    <p className="text-[10px] font-mono text-gray-500">
+                    <p className="text-sm font-bold text-slate-200 font-sans group-hover:text-primary transition-colors">
+                      {typeInfo.label}
+                    </p>
+                    <p className="text-[10px] font-mono text-slate-500">
                       {new Date(tx.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded ${tx.successful ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                    {tx.successful ? 'Confirmed' : 'Failed'}
+                <div className="flex items-center gap-4 z-10">
+                  <span className={`text-[9px] font-bold font-mono uppercase px-2 py-0.5 rounded-full border ${tx.successful ? 'bg-success/5 text-success border-success/20' : 'bg-error/5 text-error border-error/20'}`}>
+                    {tx.successful ? 'Verified' : 'Invalid'}
                   </span>
                   <a
                     href={`https://stellar.expert/explorer/testnet/tx/${tx.transaction_hash || tx.hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-500 hover:text-white transition-colors"
+                    className="text-slate-500 hover:text-primary transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                   </a>
@@ -120,8 +125,9 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
           })
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 opacity-40">
-            <History className="w-8 h-8 mb-2" />
-            <p className="text-xs font-mono">No neural signatures found in current ledger</p>
+            <Activity className="w-8 h-8 mb-4 text-slate-600" />
+            <p className="text-[10px] font-mono uppercase tracking-widest mb-1">Zero Activity Detected</p>
+            <p className="text-[9px] text-slate-500">Perform a transfer to initialize neural signatures</p>
           </div>
         )}
       </div>
