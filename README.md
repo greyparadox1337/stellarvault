@@ -149,6 +149,9 @@ npm run test:run
 ### Mobile — Responsive View
 ![StellarVault Mobile](screenshots/mobile.png)
 
+### Test Verification — 22 Passing Tests
+![StellarVault Tests](screenshots/tests.png)
+
 ---
 
 ## 📁 Project Structure

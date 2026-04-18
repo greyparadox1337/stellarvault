@@ -6,6 +6,7 @@ import StarField from "@/components/StarField";
 import GlassCard from "@/components/GlassCard";
 import Navbar from "@/components/Navbar";
 import SendPayment from "@/components/SendPayment";
+import Vault from "@/components/Vault";
 import TransactionHistory from "@/components/TransactionHistory";
 import { BalanceSkeleton, HistorySkeleton } from "@/components/Skeleton";
 import { fetchBalance, fundWithFriendbot } from "@/lib/stellar";
@@ -104,10 +105,10 @@ export default function Home() {
             variants={containerVariants}
             initial="hidden"
             animate="show"
-            className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8"
+            className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8"
           >
-            {/* Left Column: Balance + Send Payment */}
-            <motion.div variants={itemVariants} className="lg:col-span-1 space-y-4 sm:space-y-8">
+            {/* Left Column: Balance & Wallet Status */}
+            <motion.div variants={itemVariants} className="lg:col-span-4 space-y-6">
               <AnimatePresence mode="wait">
                 {!address ? (
                   <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -125,7 +126,7 @@ export default function Home() {
                   <motion.div key="balance" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
                     <GlassCard className="p-4 sm:p-6 relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <TrendingUp className="w-16 sm:w-24 h-16 sm:h-24 text-accent-cyan" />
+                        <TrendingUp className="w-16 h-16 text-accent-cyan" />
                       </div>
                       <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-4">
@@ -133,36 +134,25 @@ export default function Home() {
                             <ArrowUpRight className="w-4 h-4 text-accent-cyan" />
                           </div>
                           <h2 className="text-xs sm:text-sm font-bold font-mono text-accent-cyan uppercase tracking-widest">
-                            Network Assets
+                            Available Funds
                           </h2>
                         </div>
-                        <div className="space-y-4 sm:space-y-6">
+                        <div className="space-y-4">
                           <div>
-                            <p className="text-gray-400 mb-1 text-[10px] sm:text-xs font-mono">Available Balance</p>
                             <div className="flex items-baseline gap-2">
-                              <span className="text-3xl sm:text-5xl font-mono font-bold text-white tracking-tighter">
+                              <span className="text-3xl sm:text-4xl font-mono font-bold text-white tracking-tighter">
                                 {balance || "0.00"}
                               </span>
                               <span className="text-accent-cyan font-mono font-bold text-sm sm:text-lg">XLM</span>
                             </div>
                           </div>
-                          <div className="pt-4 sm:pt-6 border-t border-white/10 space-y-3 sm:space-y-4">
-                            <p className="text-gray-400 text-[10px] sm:text-xs font-mono flex items-center gap-2">
-                              <Droplets className="w-3 h-3" /> Funded by Friendbot
-                            </p>
+                          <div className="pt-4 border-t border-white/10 space-y-3">
                             <button
                               onClick={handleFund}
                               disabled={isFunding}
-                              className="w-full py-2.5 sm:py-3 rounded-lg bg-white/5 border border-accent-cyan/30 text-accent-cyan hover:bg-accent-cyan/10 transition-all font-mono text-xs sm:text-sm flex items-center justify-center gap-2 hover-glow-cyan disabled:opacity-50"
+                              className="w-full py-2 rounded-lg bg-white/5 border border-accent-cyan/30 text-accent-cyan hover:bg-accent-cyan/10 transition-all font-mono text-xs flex items-center justify-center gap-2 hover-glow-cyan disabled:opacity-50"
                             >
-                              {isFunding ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                  Funding...
-                                </>
-                              ) : (
-                                "Request 10,000 XLM"
-                              )}
+                              {isFunding ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request Friendbot Funds"}
                             </button>
                           </div>
                         </div>
@@ -172,32 +162,43 @@ export default function Home() {
                 )}
               </AnimatePresence>
 
-              {/* Send Payment Form */}
-              <AnimatePresence>
-                {address && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <SendPayment sourceAddress={address} onSuccess={handlePaymentSuccess} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Transactions History now inside the left column to save space */}
+              <motion.div variants={itemVariants} className="pt-4">
+                <h3 className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2 px-2">
+                  <div className="w-1 h-1 rounded-full bg-accent-cyan animate-pulse" />
+                  Live Activity
+                </h3>
+                <AnimatePresence mode="wait">
+                  {!address ? (
+                    <HistorySkeleton />
+                  ) : (
+                    <TransactionHistory key={refreshKey} address={address} />
+                  )}
+                </AnimatePresence>
+              </motion.div>
             </motion.div>
 
-            {/* Right Column: Transaction History */}
-            <motion.div variants={itemVariants} className="lg:col-span-2">
-              <AnimatePresence mode="wait">
-                {!address ? (
-                  <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <HistorySkeleton />
-                  </motion.div>
-                ) : (
-                  <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <TransactionHistory key={refreshKey} address={address} />
-                  </motion.div>
+            {/* Right Column (Center+Right combined): Send Payment & Vault */}
+            <motion.div variants={itemVariants} className="lg:col-span-8 space-y-6">
+              <AnimatePresence>
+                {address && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      <Vault address={address} />
+                    </motion.div>
+                    
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <SendPayment sourceAddress={address} onSuccess={handlePaymentSuccess} />
+                    </motion.div>
+                  </>
                 )}
               </AnimatePresence>
             </motion.div>

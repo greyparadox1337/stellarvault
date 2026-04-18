@@ -17,16 +17,26 @@ export default function WalletConnect({ onConnect }: WalletConnectProps) {
     setIsConnecting(true);
     setError(null);
     try {
-      if (await isConnected()) {
-        const { address: userAddress } = await getAddress();
-        setAddress(userAddress);
-        onConnect(userAddress);
+      const result = await isConnected();
+      if (result && result.isConnected) {
+        const addrResult = await getAddress();
+        if (addrResult && typeof addrResult === 'object' && 'address' in addrResult) {
+          if (addrResult.address) {
+            setAddress(addrResult.address);
+            onConnect(addrResult.address);
+          } else if (addrResult.error) {
+            setError(`Connection failed: ${addrResult.error}`);
+          }
+        } else if (typeof addrResult === 'string') {
+          setAddress(addrResult);
+          onConnect(addrResult);
+        }
       } else {
-        setError("Please install Freighter extension");
+        setError("Freighter wallet not detected or locked. Please ensure it's installed and unlocked.");
       }
-    } catch (err) {
-      console.error(err);
-      setError("Failed to connect wallet");
+    } catch (err: any) {
+      console.error("Wallet connection error:", err);
+      setError(err.message || "Failed to connect wallet");
     } finally {
       setIsConnecting(false);
     }

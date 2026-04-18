@@ -14,7 +14,8 @@ interface TxRecord {
   id: string;
   created_at: string;
   type: string;
-  hash: string;
+  transaction_hash: string;
+  hash?: string;
   successful: boolean;
 }
 
@@ -50,7 +51,11 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
       case "change_trust":
         return { label: "Asset Trust", icon: Settings, color: "text-orange-400" };
       default:
-        return { label: type.split("_").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" "), icon: Settings, color: "text-gray-400" };
+        return { 
+          label: (type || "Unknown").split("_").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" "), 
+          icon: Settings, 
+          color: "text-gray-400" 
+        };
     }
   };
 
@@ -102,7 +107,7 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
                     {tx.successful ? 'Confirmed' : 'Failed'}
                   </span>
                   <a
-                    href={`https://stellar.expert/explorer/testnet/tx/${tx.hash}`}
+                    href={`https://stellar.expert/explorer/testnet/tx/${tx.transaction_hash || tx.hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-500 hover:text-white transition-colors"

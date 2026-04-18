@@ -6,14 +6,15 @@ export default function NetworkStatus() {
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
 
   useEffect(() => {
+    const horizonUrl = process.env.NEXT_PUBLIC_HORIZON_URL || "https://horizon-testnet.stellar.org";
     const ping = async () => {
       try {
-        const res = await fetch("https://horizon-testnet.stellar.org/", {
-          method: "HEAD",
-          cache: "no-store",
+        const res = await fetch(`${horizonUrl.replace(/\/$/, "")}/ledgers?limit=1`, {
+          method: "GET"
         });
         setIsOnline(res.ok);
-      } catch {
+      } catch (error) {
+        console.warn("Network ping failed:", error);
         setIsOnline(false);
       }
     };

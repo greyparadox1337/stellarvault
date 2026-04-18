@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { isConnected, getAddress } from "@stellar/freighter-api";
 import { Wallet, Loader2, RefreshCw } from "lucide-react";
 import { fetchBalance } from "@/lib/stellar";
+import { useToast } from "@/context/ToastContext";
 
 interface WalletButtonProps {
   onConnect: (address: string) => void;
@@ -16,6 +17,7 @@ export default function WalletButton({ onConnect, address }: WalletButtonProps) 
   const [isConnecting, setIsConnecting] = useState(false);
   const [balance, setBalance] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { showToast } = useToast();
 
   const getCachedBalance = (addr: string) => {
     const cached = localStorage.getItem(`stellar_balance_${addr}`);
@@ -53,14 +55,26 @@ export default function WalletButton({ onConnect, address }: WalletButtonProps) 
   const handleConnect = async () => {
     setIsConnecting(true);
     try {
-      if (await isConnected()) {
-        const { address: userAddress } = await getAddress();
-        onConnect(userAddress);
+      const result = await isConnected();
+      if (result && result.isConnected) {
+        const addrResult = await getAddress();
+        if (addrResult && typeof addrResult === 'object' && 'address' in addrResult) {
+          if (addrResult.address) {
+            onConnect(addrResult.address);
+            showToast("Wallet connected successfully", "success");
+          } else if (addrResult.error) {
+            showToast(`Connection failed: ${addrResult.error}`, "error");
+          }
+        } else if (typeof addrResult === 'string') {
+          onConnect(addrResult);
+          showToast("Wallet connected successfully", "success");
+        }
       } else {
-        alert("Please install Freighter extension");
+        showToast("Freighter wallet not detected or locked. Please ensure it's installed and unlocked.", "error");
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("Wallet connection error:", err);
+      showToast(err.message || "Failed to connect wallet", "error");
     } finally {
       setIsConnecting(false);
     }
