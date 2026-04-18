@@ -104,7 +104,7 @@ export const sendPayment = async ({
   });
 
   const signedTx = TransactionBuilder.fromXDR(
-    typeof signedResult === "string" ? signedResult : signedResult.signedTxXdr,
+    signedResult,
     NETWORK_PASSPHRASE
   );
 
@@ -192,7 +192,7 @@ export const invokeVault = async (
   });
 
   const signedTx = TransactionBuilder.fromXDR(
-    typeof signedResult === "string" ? signedResult : signedResult.signedTxXdr,
+    signedResult,
     NETWORK_PASSPHRASE
   );
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/context/ToastContext";
+import { WalletProvider } from "@/context/WalletContext";
 import ToastContainer from "@/components/Toast";
 
 const spaceGrotesk = Space_Grotesk({
@@ -15,8 +16,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "StellarVault | Secure Stellar dApp",
-  description: "Securely manage and transfer your Stellar assets with StellarVault.",
+  title: "VaultLock | Secure Asset Vault",
+  description: "Securely manage and lock your Stellar assets with VaultLock.",
 };
 
 export default function RootLayout({
@@ -29,10 +30,12 @@ export default function RootLayout({
       <body
         className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        <ToastProvider>
-          {children}
-          <ToastContainer />
-        </ToastProvider>
+        <WalletProvider>
+          <ToastProvider>
+            {children}
+            <ToastContainer />
+          </ToastProvider>
+        </WalletProvider>
       </body>
     </html>
   );
