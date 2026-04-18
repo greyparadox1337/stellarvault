@@ -57,17 +57,22 @@ export function useFreighter() {
         return null;
       }
 
-      console.log("Hook: Requesting address handshake...");
+      console.log("Hook: Requesting authorization handshake...");
       const win = window as any;
       const provider = win.stellar || win.freighter;
       
       let addrResult: any;
       try {
-        // Broadest possible request pattern
+        // Attempt to solicit explicit permission first
+        if (provider.setAllowed) {
+          await provider.setAllowed();
+        }
+        
+        // Now attempt to get the address
         addrResult = await provider.getAddress();
         console.log("Handshake raw result:", addrResult);
       } catch (e: any) {
-        console.warn("Secondary handshake attempt...", e);
+        console.warn("Handshake attempt triggered exception, falling back:", e);
         addrResult = await getAddress();
       }
 
@@ -88,7 +93,7 @@ export function useFreighter() {
       } else {
         const msg = errorReason 
           ? `Freighter denied access: ${errorReason}` 
-          : "Greighter returned no address. Please ensure an account is selected and active in the extension.";
+          : "Freighter returned no address. Please ensure the site is 'Allowed' in your extension settings.";
         setError(msg);
         return null;
       }
