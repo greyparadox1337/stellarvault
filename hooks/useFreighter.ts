@@ -10,20 +10,26 @@ export function useFreighter() {
   const [error, setError] = useState<string | null>(null);
 
   const checkDetection = useCallback(async () => {
+    if (typeof window === "undefined") return false;
+    
     try {
+      // Named export check from v2+
       const result = await isConnected();
       const detected = typeof result === 'boolean' ? result : result?.isConnected;
+      
       if (detected) {
         setIsDetected(true);
         return true;
       }
-    } catch (e) {
-      // Manual fallback check
+      
+      // Raw window fallback check (SSR Guarded)
       const win = window as any;
       if (win.stellar || win.freighter) {
         setIsDetected(true);
         return true;
       }
+    } catch (e) {
+      console.warn("Detection check failed:", e);
     }
     return false;
   }, []);
@@ -41,22 +47,34 @@ export function useFreighter() {
   }, [checkDetection]);
 
   const connect = async () => {
+    if (typeof window === "undefined") return null;
+    
     setIsConnecting(true);
     setError(null);
     
     try {
-      // Step 1: Request address directly (Simple Wishpool Handshake)
-      // This automatically triggers the extension's internal authorization
-      let addrResult = await getAddress();
-      console.log("Wishpool Handshake result:", addrResult);
+      // 1. Connection Check
+      const connected = await isConnected();
+      const win = window as any;
+      const provider = win.stellar || win.freighter;
 
-      // Final Handshake: Try getPublicKey if getAddress returns empty (Wishpool style fallback)
+      // 2. Request Access Handshake (The "Failsafe" point)
+      // We explicitly solicit permission before reading the address
+      if (provider) {
+        if (provider.requestAccess) {
+          await provider.requestAccess();
+        } else if (provider.setAllowed) {
+          await provider.setAllowed();
+        }
+      }
+
+      // 3. Address Retrieval
+      let addrResult = await getAddress();
+      console.log("Failsafe Handshake result:", addrResult);
+
+      // 4. Fallback to getPublicKey if address is empty (Checklist Point #1)
       if (!addrResult || (typeof addrResult === 'object' && !addrResult.address)) {
-        const win = window as any;
-        const provider = win.stellar || win.freighter;
-        
         if (provider && provider.getPublicKey) {
-          console.log("Modern address empty, falling back to getPublicKey...");
           try {
             const pk = await provider.getPublicKey();
             if (pk) addrResult = { address: pk };
@@ -78,14 +96,15 @@ export function useFreighter() {
       }
 
       if (finalAddress) {
+        // 5. Update state after connection is confirmed (Checklist Point #5)
         setAddress(finalAddress);
         return finalAddress;
       } else {
-        setError("Freighter returned no address. Please make sure your wallet is unlocked and you've selected an account.");
+        setError("Freighter returned no address. Please ensure an account is selected and the extension is unlocked.");
         return null;
       }
     } catch (err: any) {
-      console.error("Simple connection error:", err);
+      console.error("Failsafe connection error:", err);
       setError(err.message || "Failed to connect wallet");
       return null;
     } finally {
