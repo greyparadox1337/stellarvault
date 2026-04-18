@@ -47,12 +47,23 @@ export function useFreighter() {
     try {
       // Step 1: Request address directly (Simple Wishpool Handshake)
       // This automatically triggers the extension's internal authorization
-      const addrResult = await getAddress();
+      let addrResult = await getAddress();
       console.log("Wishpool Handshake result:", addrResult);
 
-      // Final Debug Alert for production linking
+      // Final Handshake: Try getPublicKey if getAddress returns empty (Wishpool style fallback)
       if (!addrResult || (typeof addrResult === 'object' && !addrResult.address)) {
-        window.alert("Freighter Handshake Debug: Detected wallet but no address was returned. Raw result: " + JSON.stringify(addrResult));
+        const win = window as any;
+        const provider = win.stellar || win.freighter;
+        
+        if (provider && provider.getPublicKey) {
+          console.log("Modern address empty, falling back to getPublicKey...");
+          try {
+            const pk = await provider.getPublicKey();
+            if (pk) addrResult = { address: pk };
+          } catch (e) {
+            console.warn("getPublicKey fallback failed", e);
+          }
+        }
       }
 
       let finalAddress = "";
