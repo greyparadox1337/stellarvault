@@ -66,6 +66,8 @@ export function useFreighter() {
         // Attempt to solicit explicit permission first
         if (provider.setAllowed) {
           await provider.setAllowed();
+          // Give the extension a moment to process the authorization
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
         // Now attempt to get the address
